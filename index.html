@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="styles.css">
+
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="container">
+
+
+        <canvas id="canvas" width="900" height="500"></canvas>
+        
+
+        <h4>Selecciona el tipo de fractal</h4>
+        <!-- <select name="" id="tipoDeFractal" >
+            <option value="" selected disabled hidden>Tipo de fractal </option>
+            <option value="kotch">Curva de Kotch</option>
+            <option value="sierpinski">Triangulo de Sierpinski</option>
+            <option value="mandelbrot">Mandelbrot</option>
+        </select>
+
+        <h4>Base</h4>
+        <select name="" id="base" >
+            <option value="" selected disabled hidden>Base del fractal</option>
+            <option value="linea">Linea</option>
+            <option value="triangulo">Triangulo</option>
+        </select>
+
+        <h4>Axioma de produccion</h4> -->
+        <select name="" id="produccion" >
+                <option value="" selected disabled hidden>Tipo de fractal</option>
+                <option value="curva_de_kotch">Curva de Kotch</option>
+                <option value="copo_de_nieve">Copo de nieve</option>
+                <option value="copo_de_nieve_invertido">Copo de nieve invertido</option>
+                <option value="cesaro">Fractal de Cesaro</option>
+                <option value="rama">Rama</option>
+                <option value="arbol">Arbol</option>
+                <option value="triangulo_hielo">Triangulo de hielo</option>
+                <option value="cuadrado_hielo">Cuadrado de hielo</option>
+                <!-- <option value="curva_peano">Cuarva de Peano</option> -->
+        </select>
+
+        <h4>Ingresa la profundidad</h4>
+        <input type="number" max="9" id="profundidad">
+
+        <button onclick="crearFractal()">Crear fractal</button>
+
+    </div>
+</body>
+
+<script src="main.js"></script>
+</html>
