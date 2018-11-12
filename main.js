@@ -35,18 +35,16 @@ class Board {
 
 
 let FractalFactory  = {
-    kotch: (profundidad, produccion, base, particion, angulo, board) => new FractalKotch(profundidad, produccion, base, particion, angulo, board)
+    kotch:      (profundidad, info, board) => new FractalKotch(profundidad, info, board),
+    sierpinsky: (profundidad, info, board) => new FractalSierpinsky(profundidad, info, board)
 }
 
 class Fractal {
 
-    constructor(profundidad, produccion, base, particion, angulo, board) {
+    constructor(profundidad, info, board) {
         this.profundidad    = profundidad
-        this.produccion     = produccion
-        this.particion      = particion
-        this.angulo         = angulo
+        this.info           = info
         this.board          = board
-        this.base           = base
     }
 
     make(){
@@ -81,8 +79,21 @@ class KothLine {
 
 class FractalKotch extends Fractal {
 
-    constructor(profundidad, produccion, base, particion, angulo, board) {
-        super(profundidad, produccion, base, particion, angulo, board);
+    constructor(profundidad, info, board) {
+        super(profundidad, info, board);
+
+        this.particion      = this.info.particion
+        this.produccion     = this.info.produccion
+        this.angulo         = this.info.angulo
+        this.base           = this.info.base
+        this.initProd       = this.info.initProd
+
+        let base = this.makeBase(this.base);
+
+        this.originalWidth  = base.width;
+        this.lines          = base.lines;
+
+        this.create()
     }
 
     makeBase(base) {
@@ -120,12 +131,12 @@ class FractalKotch extends Fractal {
 
         else if(base == 'hexagono') {
             width = this.board.height * 0.35;
-            let a = new KothLine(new Point(this.board.width * 0.45, this.board.height*0.8), 0, width),
-                b = new KothLine(a.end, -60, width ),
-                c = new KothLine(b.end, -120, width ),
-                d = new KothLine(c.end, 180, width ),
-                e = new KothLine(d.end, -240, width ),
-                f = new KothLine(e.end, -300, width );
+            let a = new KothLine(new Point(this.board.width/2, this.board.height*0.8), 330, width),
+                b = new KothLine(a.end, 270, width ),
+                c = new KothLine(b.end, 210, width ),
+                d = new KothLine(c.end, 150, width ),
+                e = new KothLine(d.end, 90, width ),
+                f = new KothLine(e.end, 30, width );
 
             lines.push(a);
             lines.push(b);
@@ -152,7 +163,22 @@ class FractalKotch extends Fractal {
         return {width: width, lines: lines}
     }
 
+    expandProduction() {
+        let x = this.initProd;
+        for(let time=1; time<=this.profundidad; time++) { 
+            if (time == 1) {
+                x = x.replace("A", this.produccion);
+            }
+            else {
+                x = x.replace(new RegExp("A", 'g'), x);
+            }
+        }
+
+        return x;
+    }
+
     create() {
+
 
         //iterar por profundidad
         for(let time=0; time<this.profundidad; time++) {
@@ -200,22 +226,111 @@ class FractalKotch extends Fractal {
         }
     }
 
-
     make() {
         this.board.ctx.lineWidth      = 1;
         this.board.ctx.strokeStyle    = "#FF0000";
-
-        let base = this.makeBase(this.base);
-
-        this.originalWidth  = base.width;
-        this.lines          = base.lines;
-
-        this.create()
 
         this.lines.forEach( line => {
             line.make(this.board)
         })
     }
+}
+
+
+class Triangle {
+
+    constructor(a, b, c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+
+    make(board) {
+        board.ctx.beginPath();
+        board.ctx.moveTo(this.a.x, this.a.y);
+        board.ctx.lineTo(this.b.x, this.b.y);
+        board.ctx.lineTo(this.c.x, this.c.y);
+        board.ctx.fill();
+
+        // board.fillStyle = "#FFCC00";
+        // board.ctx.fill();
+    }
+
+    split() {
+
+        let size = Math.sqrt( Math.abs(this.a.x - this.b.x)**2 + Math.abs(this.a.y - this.b.y)**2 )
+
+        let rad = 300 * Math.PI/180;
+        let ab  = new Point( (size/2)*Math.cos(rad) + this.a.x,  (size/2)*Math.sin(rad) + this.a.y);
+
+        rad     = 60 * Math.PI/180;
+        let bc  = new Point( (size/2)*Math.cos(rad) + this.b.x,  (size/2)*Math.sin(rad) + this.b.y)
+
+        size = Math.abs(this.a.x - this.c.x)
+        rad     = 180 * Math.PI/180;
+        let ac  = new Point( (size/2)*Math.cos(rad) + this.c.x,  (size/2)*Math.sin(rad) + this.c.y)
+
+        return [
+            new Triangle(new Point(this.a.x, this.a.y), ab, ac),
+            new Triangle(ab, new Point(this.b.x, this.b.y), bc),
+            new Triangle(ac, bc, new Point(this.c.x, this.c.y))
+        ]
+
+    }
+}
+
+
+class FractalSierpinsky extends Fractal {
+
+    constructor(profundidad, info, board) {
+        super(profundidad, info, board);
+
+        this.shapes = []
+
+        this.makeBase(this.info.base);
+        this.create();
+
+    }
+
+    create() {
+        
+        let list = this.shapes;
+        for(let i=0; i<this.profundidad; i++) {
+
+            let newList = [];
+            list.forEach( shape => {
+
+                shape.split().forEach( x => {
+                    newList.push(x)
+                })
+
+            })
+            list = newList;
+
+        }
+
+        this.shapes = list;
+    }
+
+    makeBase(base) {
+        if (base == 'triangulo') {
+            let width = this.board.height*0.7
+            let a = new Point(this.board.width/2 - width/2, this.board.height*0.85),
+                b = new Point(this.board.width/2, this.board.height*0.8 - width),
+                c = new Point(this.board.width/2 + width/2, this.board.height*0.85)
+
+            this.shapes.push(new Triangle(a,b,c));
+        }
+    }
+
+    make() {
+        this.board.ctx.fillStyle    = "#FF0000";
+
+        this.shapes.forEach( shape => {
+            shape.make(this.board);
+        })
+    }
+
 }
 
 
@@ -234,7 +349,7 @@ function crearFractal() {
             tipoDeFractal:  'kotch',
             base:           'linea',
             particion:      3,
-            angulo:          60,
+            angulo:         60,
             produccion:     'AIADDAIA'
         },
 
@@ -300,6 +415,19 @@ function crearFractal() {
             particion:      0.44721,
             angulo:         227.175,
             produccion:     'AADAIIADAA'
+        },
+
+        isla_gosper: {
+            tipoDeFractal:  'kotch',
+            base:           'hexagono',
+            particion:      3,
+            angulo:         60,
+            produccion:     'ADAIA'
+        },
+
+        triangulo_sierpinsky: {
+            tipoDeFractal:  'sierpinsky',
+            base:           'triangulo',
         }
 
     }
@@ -307,7 +435,7 @@ function crearFractal() {
     let info = fractales[produccion];
 
     board   = new Board(canvas.height, canvas.width, ctx);
-    fractal = FractalFactory[info.tipoDeFractal](profundidad, info.produccion, info.base, info.particion, info.angulo, board);
+    fractal = FractalFactory[info.tipoDeFractal](profundidad, info, board);
 
     board.draw(fractal);
 
