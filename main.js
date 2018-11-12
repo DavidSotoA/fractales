@@ -251,9 +251,6 @@ class Triangle {
         board.ctx.lineTo(this.b.x, this.b.y);
         board.ctx.lineTo(this.c.x, this.c.y);
         board.ctx.fill();
-
-        // board.fillStyle = "#FFCC00";
-        // board.ctx.fill();
     }
 
     split() {
@@ -266,7 +263,6 @@ class Triangle {
         rad     = 60 * Math.PI/180;
         let bc  = new Point( (size/2)*Math.cos(rad) + this.b.x,  (size/2)*Math.sin(rad) + this.b.y)
 
-        size = Math.abs(this.a.x - this.c.x)
         rad     = 180 * Math.PI/180;
         let ac  = new Point( (size/2)*Math.cos(rad) + this.c.x,  (size/2)*Math.sin(rad) + this.c.y)
 
@@ -275,7 +271,37 @@ class Triangle {
             new Triangle(ab, new Point(this.b.x, this.b.y), bc),
             new Triangle(ac, bc, new Point(this.c.x, this.c.y))
         ]
+        
+    }
+}
 
+class Square {
+
+    constructor(b, width) {
+        this.b = b;
+        this.size = width
+
+    }
+
+    make(board) {
+        board.ctx.fillRect(this.b.x, this.b.y, this.size, this.size);
+    }
+
+    split() {
+        let split = this.size/3,
+            newSquares = []
+        
+        for (let i = 0; i<3; i++) {
+            for (let j = 0; j<3; j++) {
+                if (i != 1 || j !=1 ) { 
+                    newSquares.push(new Square(new Point(this.b.x + split*j, this.b.y + split*i), split));
+                }
+
+            }
+        }
+
+        console.log(newSquares);
+        return newSquares;
     }
 }
 
@@ -314,12 +340,23 @@ class FractalSierpinsky extends Fractal {
 
     makeBase(base) {
         if (base == 'triangulo') {
-            let width = this.board.height*0.7
-            let a = new Point(this.board.width/2 - width/2, this.board.height*0.85),
-                b = new Point(this.board.width/2, this.board.height*0.8 - width),
-                c = new Point(this.board.width/2 + width/2, this.board.height*0.85)
+            let width = this.board.height*0.8
+            let a = new Point(this.board.width/2 - width/2, this.board.height*0.8),
+                b = new Point(this.board.width/2, this.board.height*0.8 - width*(Math.sqrt(3)/2)),
+                c = new Point(this.board.width/2 + width/2, this.board.height*0.8)
 
-            this.shapes.push(new Triangle(a,b,c));
+            this.shapes.push(new Triangle(a, b, c));
+        }
+
+        else if(base == 'cuadrado') {
+            let width = this.board.height*0.6;
+
+            let a = new Point(this.board.width/2 - width/2, this.board.height/2 + width/2),
+                b = new Point(this.board.width/2 - width/2, this.board.height/2 - width/2),
+                c = new Point(this.board.width/2 + width/2, this.board.height/2 - width),
+                d = new Point(this.board.width/2 + width/2, this.board.height/2 + width/2)
+
+                this.shapes.push(new Square(b, width))
         }
     }
 
@@ -428,6 +465,11 @@ function crearFractal() {
         triangulo_sierpinsky: {
             tipoDeFractal:  'sierpinsky',
             base:           'triangulo',
+        },
+
+        alfombra_sierpinsky: {
+            tipoDeFractal: 'sierpinsky',
+            base:           'cuadrado'
         }
 
     }
