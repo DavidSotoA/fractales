@@ -387,46 +387,62 @@ class Imaginary {
     }
 }
 
-
 class FractalMandelbrot extends Fractal {
 
     constructor(profundidad, info, board) {
         super(profundidad, info, board);
 
-        this.delta = this.calculateDeltaSize(board.width, board.height, info.xRange, info.yRange);
+        this.colorDelta = 100/this.info.iterate;
+        this.delta      = this.calculateDeltaSize(board.width, board.height, info.xRange, info.yRange);
+
 
     }
 
     create() {
         for (let i = 0; i<= this.board.height ; i ++) {
             for(let j = 0; j<=this.board.width; j ++) {
-                let x = this.screenToCartesian(j, this.delta.width, this.board.width),
-                    y = this.screenToCartesian(j, this.delta.width, this.board.width);
+                let x = this.screenToCartesian(j, this.delta.width, this.board.width + 250),
+                    y = this.screenToCartesian(i, this.delta.height, this.board.height);
 
                 let c = new Imaginary(x, y);
+
+                let point = this.mandelbrotFunction(c, this.info.iterate, this.info.puntoEscape)
                 
-                if (this.mandelbrotFunction(c, this.iterate)){
-
-                    this.board.ctx.fillRect( j, i, 1, 1 );
-
+                if (point.isMandelbrot){
+                    this.board.ctx.fillStyle    = "#000000";
+                } else {
+                    this.board.ctx.fillStyle    = `hsl(256, 100%, ${point.puntoEscape*3}%)`;
                 }
+
+                this.board.ctx.fillRect( j, i, 1, 1 );
 
             }
         }
     }
 
-    mandelbrotFunction(c, iterate) {
+    mandelbrotFunction(c, iterate, puntoEscape) {
         let z = c
  
         for (let i = 1; i < iterate; i++) {
+
+            if (Math.sqrt( z.real**2 + z.imaginary**2 ) > puntoEscape) {
+
+                return {
+                    puntoEscape: i,
+                    isMandelbrot: false
+                }
+
+            }
+
             z = Imaginary.add( Imaginary.product(z, z), c );
         }
 
-        return true;
+        return {
+            isMandelbrot: true
+        }
     }
 
     make() {
-        this.board.ctx.fillStyle    = "#FF0000";
         this.create();
     }
 
@@ -445,7 +461,7 @@ class FractalMandelbrot extends Fractal {
     }
 
     screenToCartesian(pixelPos, pixelSize, size) {
-        return pixelSize*(pixelPos - (size/2));
+        return pixelSize*(pixelPos - (size/2) );
     }
 
 }
@@ -553,9 +569,10 @@ function crearFractal() {
 
         mandelbrot: {
             tipoDeFractal: 'mandelbrot',
-            xRange: {a: -6, b: 6},
-            yRange: {a: -4, b: 4},
-            iterate: 100
+            xRange: {a: -2.4, b: 1},
+            yRange: {a: -1.1, b: 1.1},
+            iterate: 1000,
+            puntoEscape: 2
         }
 
     }
