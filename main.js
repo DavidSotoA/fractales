@@ -36,7 +36,8 @@ class Board {
 
 let FractalFactory  = {
     kotch:      (profundidad, info, board) => new FractalKotch(profundidad, info, board),
-    sierpinsky: (profundidad, info, board) => new FractalSierpinsky(profundidad, info, board)
+    sierpinsky: (profundidad, info, board) => new FractalSierpinsky(profundidad, info, board),
+    mandelbrot: (profundidad, info, board) => new FractalMandelbrot(profundidad, info, board),
 }
 
 class Fractal {
@@ -300,7 +301,6 @@ class Square {
             }
         }
 
-        console.log(newSquares);
         return newSquares;
     }
 }
@@ -370,6 +370,85 @@ class FractalSierpinsky extends Fractal {
 
 }
 
+class Imaginary {
+
+    constructor(real, imaginary) {
+        this.real       = real;
+        this.imaginary  = imaginary;
+
+    }
+
+    static product(a, b) {
+        return new Imaginary(a.real * b.real - a.imaginary * b.imaginary, a.real * b.imaginary + a.imaginary * b.real);
+    }
+
+    static add(a, b) {
+        return new Imaginary(a.real + b.real, a.imaginary + b.imaginary);
+    }
+}
+
+
+class FractalMandelbrot extends Fractal {
+
+    constructor(profundidad, info, board) {
+        super(profundidad, info, board);
+
+        this.delta = this.calculateDeltaSize(board.width, board.height, info.xRange, info.yRange);
+
+    }
+
+    create() {
+        for (let i = 0; i<= this.board.height ; i ++) {
+            for(let j = 0; j<=this.board.width; j ++) {
+                let x = this.screenToCartesian(j, this.delta.width, this.board.width),
+                    y = this.screenToCartesian(j, this.delta.width, this.board.width);
+
+                let c = new Imaginary(x, y);
+                
+                if (this.mandelbrotFunction(c, this.iterate)){
+
+                    this.board.ctx.fillRect( j, i, 1, 1 );
+
+                }
+
+            }
+        }
+    }
+
+    mandelbrotFunction(c, iterate) {
+        let z = c
+ 
+        for (let i = 1; i < iterate; i++) {
+            z = Imaginary.add( Imaginary.product(z, z), c );
+        }
+
+        return true;
+    }
+
+    make() {
+        this.board.ctx.fillStyle    = "#FF0000";
+        this.create();
+    }
+
+    calculateDeltaSize(width, height, xRange, yRange) {
+        let pixelWidth  = Math.abs(xRange.a - xRange.b)/width, 
+            pixelHeight = Math.abs(yRange.a - yRange.b)/height
+
+        return {
+            width:  pixelWidth,
+            height: pixelHeight
+        }
+    }
+
+    cartesianToScreen(cartesianPos, pixelSize, size) {
+        return (cartesianPos/pixelSize) + (size/2)
+    }
+
+    screenToCartesian(pixelPos, pixelSize, size) {
+        return pixelSize*(pixelPos - (size/2));
+    }
+
+}
 
 function crearFractal() {
     let canvas          = document.getElementById("canvas"),
@@ -470,6 +549,13 @@ function crearFractal() {
         alfombra_sierpinsky: {
             tipoDeFractal: 'sierpinsky',
             base:           'cuadrado'
+        },
+
+        mandelbrot: {
+            tipoDeFractal: 'mandelbrot',
+            xRange: {a: -6, b: 6},
+            yRange: {a: -4, b: 4},
+            iterate: 100
         }
 
     }
