@@ -9,25 +9,23 @@ class Board {
         this.clicks     = 0;
         this.zoomDelta  = 0.2
 
-
-        this.zoom       = this.zoom.bind(this)
-        this.onClick    = this.onClick.bind(this)
+        this.onClick    = this.zoom.bind(this)
         this.draw       = this.draw.bind(this)
     }
 
-    zoom(fractal) {
-        let factor = 1 + this.zoomDelta
-        this.ctx.scale(factor,factor);
-        this.draw(fractal)
-    }
 
-    onClick(fractal) {
+
+    zoom(event, fractal) {
+        let point = new Point(event.clientX, event.clientY)
+
         this.clicks += 1;
-        this.zoom(fractal);
+        fractal.zoom(this.zoomDelta, point);
+        this.draw(fractal)
     }
 
     draw(fractal) {
         this.ctx.clearRect(0, 0, this.width, this.height);
+
         fractal.make()
     }
 
@@ -375,7 +373,6 @@ class Imaginary {
     constructor(real, imaginary) {
         this.real       = real;
         this.imaginary  = imaginary;
-
     }
 
     static product(a, b) {
@@ -393,31 +390,63 @@ class FractalMandelbrot extends Fractal {
         super(profundidad, info, board);
 
         this.colorDelta = 100/this.info.iterate;
-        this.delta      = this.calculateDeltaSize(board.width, board.height, info.xRange, info.yRange);
-
-
     }
 
     create() {
-        for (let i = 0; i<= this.board.height ; i ++) {
-            for(let j = 0; j<=this.board.width; j ++) {
-                let x = this.screenToCartesian(j, this.delta.width, this.board.width + 250),
-                    y = this.screenToCartesian(i, this.delta.height, this.board.height);
+        let screensize  = this.calculateScreenSize(this.board.width, this.board.height, this.info.xRange, this.info.yRange);
+
+        this.width      = screensize.width
+        this.height     = screensize.height
+        this.center     = new Point(this.width/2, this.height/2)
+        this.delta      = this.calculateDeltaSize(this.width, this.height, this.info.xRange, this.info.yRange);
+
+        for (let i = -this.board.height/2; i <= this.board.height/2 ; i ++) {
+            for(let j = -this.board.width/2; j <= this.board.width/2; j ++) {
+
+                let x = this.screenToCartesian(j, this.delta.width, this.width  ),
+                    y = this.screenToCartesian(i, this.delta.height, this.height);
 
                 let c = new Imaginary(x, y);
 
                 let point = this.mandelbrotFunction(c, this.info.iterate, this.info.puntoEscape)
-                
-                if (point.isMandelbrot){
-                    this.board.ctx.fillStyle    = "#000000";
+
+                if ( x == 0 && y == 0 ) {
+                    this.board.ctx.fillStyle    = `rgb(255, 0, 0)`;
                 } else {
-                    this.board.ctx.fillStyle    = `hsl(256, 100%, ${point.puntoEscape*3}%)`;
+                    
+                    if (point.isMandelbrot){
+                        this.board.ctx.fillStyle    = "#000000";
+                    } else {
+                        this.board.ctx.fillStyle    = `hsl(256, 100%, ${point.puntoEscape*3}%)`;
+                    }
                 }
 
-                this.board.ctx.fillRect( j, i, 1, 1 );
+                this.board.ctx.fillRect( j + this.board.width/2, i + this.board.height/2, 1, 1 );
 
             }
         }
+        console.log('jojojo')
+    }
+
+    zoom(delta, point) {
+        let width = Math.abs(this.info.xRange.a - this.info.xRange.b),
+            height = Math.abs(this.info.yRange.a - this.info.yRange.b)
+
+        let move = new Point ( this.screenToCartesian(point.x - this.board.width/2, this.delta.width, this.width ),
+        this.screenToCartesian(point.y - this.board.height/2, this.delta.height, this.height))
+
+        console.log(this.info)
+
+        this.info.xRange.a += move.x*(delta)
+        this.info.xRange.b += move.x*(delta)
+        this.info.yRange.a += move.y*(delta)
+        this.info.yRange.b += move.y*(delta)
+
+        this.info.xRange.a += width*(delta/2)
+        this.info.xRange.b -= width*(delta/2)
+        this.info.yRange.a += height*(delta/2)
+        this.info.yRange.b -= height*(delta/2)
+
     }
 
     mandelbrotFunction(c, iterate, puntoEscape) {
@@ -446,6 +475,18 @@ class FractalMandelbrot extends Fractal {
         this.create();
     }
 
+    calculateScreenSize(width, height, xRange, yRange) {
+        let cartesianWidth  = Math.abs(xRange.a - xRange.b),
+            cartesianHeight = Math.abs(yRange.a - yRange.b);
+
+        let x =  Math.min(width/cartesianWidth, height/cartesianHeight)
+
+        return {
+            width:  cartesianWidth*x,
+            height: cartesianHeight*x
+        }
+    }
+
     calculateDeltaSize(width, height, xRange, yRange) {
         let pixelWidth  = Math.abs(xRange.a - xRange.b)/width, 
             pixelHeight = Math.abs(yRange.a - yRange.b)/height
@@ -461,7 +502,7 @@ class FractalMandelbrot extends Fractal {
     }
 
     screenToCartesian(pixelPos, pixelSize, size) {
-        return pixelSize*(pixelPos - (size/2) );
+        return pixelSize*(pixelPos);
     }
 
 }
@@ -569,8 +610,8 @@ function crearFractal() {
 
         mandelbrot: {
             tipoDeFractal: 'mandelbrot',
-            xRange: {a: -2.4, b: 1},
-            yRange: {a: -1.1, b: 1.1},
+            xRange: {a: -2, b: 1},
+            yRange: {a: -1, b: 1},
             iterate: 1000,
             puntoEscape: 2
         }
@@ -584,7 +625,7 @@ function crearFractal() {
 
     board.draw(fractal);
 
-    canvas.addEventListener('click', () => board.onClick(fractal))
+    canvas.addEventListener('click', (event) => board.zoom(event, fractal))
 }
 
 
