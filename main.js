@@ -416,17 +416,8 @@ class FractalMandelbrot extends Fractal {
 
                 let point = this.mandelbrotFunction(c, this.info.iterate, this.info.puntoEscape)
 
-                if ( x == this.info.xRange.b || x == this.info.xRange.a || y ==  this.info.yRange.a || y ==  this.info.yRange.b ) {
-                    this.board.ctx.fillStyle    = `rgb(255, 0, 0)`;
-                } else {
-                    
-                    if (point.isMandelbrot){
-                        this.board.ctx.fillStyle    = "#000000";
-                    } else {
-                        this.board.ctx.fillStyle    = `hsl(256, 100%, ${point.puntoEscape*3}%)`;
-                    }
-                }
-
+                this.board.ctx.fillStyle    = point.isMandelbrot ? "#000000" : `hsl(256, 100%, ${point.puntoEscape*3}%)`;
+                
                 this.board.ctx.fillRect( j + Math.abs(z1*this.info.xRange.a) , i + Math.abs(z2*this.info.yRange.a), 1, 1 );
 
             }
